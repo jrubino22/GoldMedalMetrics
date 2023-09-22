@@ -1,20 +1,26 @@
 package com.codecademy.goldmedal.controller;
 
+import com.codecademy.goldmedal.repositories.CountryRepository;
+import com.codecademy.goldmedal.repositories.GoldMedalRepository;
 import com.codecademy.goldmedal.model.*;
 import org.apache.commons.text.WordUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/countries")
 public class GoldMedalController {
-    // TODO: declare references to your repositories
-
-    // TODO: update your constructor to include your repositories
-    public GoldMedalController() {
+    // TODO: declare references to your com.codecademy.goldmedal.repositories
+    private GoldMedalRepository goldMedalRepository;
+    private CountryRepository countryRepository;
+    // TODO: update your constructor to include your com.codecademy.goldmedal.repositories
+    public GoldMedalController(GoldMedalRepository goldMedalRepository, CountryRepository countryRepository) {
+        this.goldMedalRepository = goldMedalRepository;
+        this.countryRepository = countryRepository;
     }
 
     @GetMapping
@@ -40,19 +46,29 @@ public class GoldMedalController {
         List<GoldMedal> medalsList;
         switch (sortBy) {
             case "year":
-                medalsList = // TODO: list of medals sorted by year in the given order
+                medalsList = ascendingOrder
+                        ? this.goldMedalRepository.findByCountryOrderByYearAsc(countryName)
+                        : this.goldMedalRepository.findByCountryOrderByYearDesc(countryName);
                 break;
             case "season":
-                medalsList = // TODO: list of medals sorted by season in the given order
+                medalsList = ascendingOrder
+                        ? this.goldMedalRepository.findByCountryOrderBySeasonAsc(countryName)
+                        : this.goldMedalRepository.findByCountryOrderBySeasonDesc(countryName);
                 break;
             case "city":
-                medalsList = // TODO: list of medals sorted by city in the given order
+                medalsList = ascendingOrder
+                        ? this.goldMedalRepository.findByCountryOrderByCityAsc(countryName)
+                        : this.goldMedalRepository.findByCountryOrderByCityDesc(countryName);
                 break;
             case "name":
-                medalsList = // TODO: list of medals sorted by athlete's name in the given order
+                medalsList = ascendingOrder
+                        ? this.goldMedalRepository.findByCountryOrderByNameAsc(countryName)
+                        : this.goldMedalRepository.findByCountryOrderByNameDesc(countryName);
                 break;
             case "event":
-                medalsList = // TODO: list of medals sorted by event in the given order
+                medalsList = ascendingOrder
+                        ? this.goldMedalRepository.findByCountryOrderByEventAsc(countryName)
+                        : this.goldMedalRepository.findByCountryOrderByEventDesc(countryName);
                 break;
             default:
                 medalsList = new ArrayList<>();
@@ -63,17 +79,21 @@ public class GoldMedalController {
     }
 
     private CountryDetailsResponse getCountryDetailsResponse(String countryName) {
-        var countryOptional = // TODO: get the country; this repository method should return a java.util.Optional
+        Optional<Country> countryOptional = this.countryRepository.findByName(countryName);
         if (countryOptional.isEmpty()) {
             return new CountryDetailsResponse(countryName);
         }
 
-        var country = countryOptional.get();
-        var goldMedalCount = // TODO: get the medal count
+        Country country = countryOptional.get();
 
-        var summerWins = // TODO: get the collection of wins at the Summer Olympics, sorted by year in ascending order
+        List <GoldMedal> medalList = this.goldMedalRepository.findByCountry(countryName);
+
+        Integer goldMedalCount = medalList.size();
+
+        var summerWins = this.goldMedalRepository.findByCountryAndSeasonOrderByYearAsc(countryName, "summer");
         var numberSummerWins = summerWins.size() > 0 ? summerWins.size() : null;
-        var totalSummerEvents = // TODO: get the total number of events at the Summer Olympics
+        List <GoldMedal> summerEventList = this.goldMedalRepository.findBySeason("summer");
+        int totalSummerEvents = summerEventList.size();
         var percentageTotalSummerWins = totalSummerEvents != 0 && numberSummerWins != null ? (float) summerWins.size() / totalSummerEvents : null;
         var yearFirstSummerWin = summerWins.size() > 0 ? summerWins.get(0).getYear() : null;
 
