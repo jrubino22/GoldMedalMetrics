@@ -79,7 +79,7 @@ public class GoldMedalController {
     }
 
     private CountryDetailsResponse getCountryDetailsResponse(String countryName) {
-        Optional<Country> countryOptional = this.countryRepository.findByName(countryName);
+        Optional<Country> countryOptional = this.countryRepository.getByName(countryName);
         if (countryOptional.isEmpty()) {
             return new CountryDetailsResponse(countryName);
         }
@@ -97,14 +97,16 @@ public class GoldMedalController {
         var percentageTotalSummerWins = totalSummerEvents != 0 && numberSummerWins != null ? (float) summerWins.size() / totalSummerEvents : null;
         var yearFirstSummerWin = summerWins.size() > 0 ? summerWins.get(0).getYear() : null;
 
-        var winterWins = // TODO: get the collection of wins at the Winter Olympics
+        var winterWins = this.goldMedalRepository.findByCountryAndSeasonOrderByYearAsc(countryName, "winter");
         var numberWinterWins = winterWins.size() > 0 ? winterWins.size() : null;
-        var totalWinterEvents = // TODO: get the total number of events at the Winter Olympics, sorted by year in ascending order
+        List <GoldMedal> winterEventList = this.goldMedalRepository.findBySeason("winter");
+        var totalWinterEvents = winterEventList.size() > 0 ? winterEventList.size() : null;
         var percentageTotalWinterWins = totalWinterEvents != 0 && numberWinterWins != null ? (float) winterWins.size() / totalWinterEvents : null;
         var yearFirstWinterWin = winterWins.size() > 0 ? winterWins.get(0).getYear() : null;
-
-        var numberEventsWonByFemaleAthletes = // TODO: get the number of wins by female athletes
-        var numberEventsWonByMaleAthletes = // TODO: get the number of wins by male athletes
+        List <GoldMedal> byCountryAndGenderFemale = this.goldMedalRepository.findByCountryAndGender(countryName, "female");
+        var numberEventsWonByFemaleAthletes = byCountryAndGenderFemale.size();
+        List <GoldMedal> byCountryAndGenderMale = this.goldMedalRepository.findByCountryAndGender(countryName, "male");
+        var numberEventsWonByMaleAthletes = byCountryAndGenderMale.size();
 
         return new CountryDetailsResponse(
                 countryName,
@@ -125,17 +127,23 @@ public class GoldMedalController {
         List<Country> countries;
         switch (sortBy) {
             case "name":
-                countries = // TODO: list of countries sorted by name in the given order
+                countries = ascendingOrder
+                        ? this.countryRepository.getAllByOrderByNameAsc()
+                        : this.countryRepository.getAllByOrderByNameDesc();
                 break;
             case "gdp":
-                countries = // TODO: list of countries sorted by gdp in the given order
+                countries = ascendingOrder
+                        ? this.countryRepository.getAllByOrderByGdpAsc()
+                        : this.countryRepository.getAllByOrderByGdpDesc();
                 break;
             case "population":
-                countries = // TODO: list of countries sorted by population in the given order
+                countries = ascendingOrder
+                        ? this.countryRepository.getAllByOrderByPopulationAsc()
+                        : this.countryRepository.getAllByOrderByPopulationDesc();
                 break;
             case "medals":
             default:
-                countries = // TODO: list of countries in any order you choose; for sorting by medal count, additional logic below will handle that
+                countries = this.countryRepository.getAllByOrderByNameAsc();
                 break;
         }
 
@@ -159,7 +167,9 @@ public class GoldMedalController {
     private List<CountrySummary> getCountrySummariesWithMedalCount(List<Country> countries) {
         List<CountrySummary> countrySummaries = new ArrayList<>();
         for (var country : countries) {
-            var goldMedalCount = // TODO: get count of medals for the given country
+            String countryName = country.getName();
+            List <GoldMedal> allMedals = this.goldMedalRepository.findByCountry(countryName);
+            var goldMedalCount = allMedals.size();
             countrySummaries.add(new CountrySummary(country, goldMedalCount));
         }
         return countrySummaries;
